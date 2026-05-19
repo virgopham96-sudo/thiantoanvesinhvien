@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { multipleChoiceQuestions, arrangementQuestions, Question, ArrangementQuestion } from './data/questions';
-import { Trophy, CheckCircle2, AlertCircle, Clock, ArrowLeft, Home, Calendar, HelpCircle, FileText, Users, QrCode, ChevronRight, ChevronLeft, ZoomOut, ZoomIn, List, Edit, Loader2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { px4MultipleChoiceQuestions, px4ArrangementQuestions } from './data/px4_questions';
+import { Trophy, CheckCircle2, AlertCircle, Clock, ArrowLeft, Home, Calendar, HelpCircle, FileText, Users, QrCode, ChevronRight, ChevronLeft, Edit, Loader2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 
@@ -74,8 +75,16 @@ export default function App() {
     setError('');
     setAnswers({});
     
-    const shuffledMC = shuffleArray(multipleChoiceQuestions).slice(0, 20);
-    const shuffledArrangement = shuffleArray(arrangementQuestions).slice(0, 5).map(q => ({
+    let selectedMCQ = multipleChoiceQuestions;
+    let selectedArrangement = arrangementQuestions;
+
+    if (teamName.trim().toUpperCase() === 'PX4') {
+      selectedMCQ = px4MultipleChoiceQuestions;
+      selectedArrangement = px4ArrangementQuestions;
+    }
+    
+    const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20);
+    const shuffledArrangement = shuffleArray(selectedArrangement).slice(0, 5).map(q => ({
       ...q,
       items: shuffleArray(q.items) 
     }));
@@ -133,7 +142,7 @@ export default function App() {
       if (q.type === 'multiple-choice') {
         if (answers[q.id] === q.correctAnswer) calculatedScore++;
       } else if (q.type === 'arrangement') {
-        const originalQ = arrangementQuestions.find(a => a.id === q.id);
+        const originalQ = [...arrangementQuestions, ...px4ArrangementQuestions].find(a => a.id === q.id);
         const isCorrect = originalQ && JSON.stringify(answers[q.id]) === JSON.stringify(originalQ.items);
         if (isCorrect) calculatedScore++;
       }
@@ -294,17 +303,6 @@ export default function App() {
                   00 : {Math.floor(timeLeft / 60).toString().padStart(2, '0')} : {(timeLeft % 60).toString().padStart(2, '0')}
                 </span>
               </div>
-              <div className="hidden md:flex items-center gap-2">
-                <button className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-slate-500 transition-colors">
-                  <ZoomOut className="w-[18px] h-[18px]" />
-                </button>
-                <button className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-slate-500 transition-colors">
-                  <ZoomIn className="w-[18px] h-[18px]" />
-                </button>
-                <button className="p-1.5 border border-slate-200 rounded hover:bg-slate-100 text-slate-500 transition-colors">
-                  <List className="w-[18px] h-[18px]" />
-                </button>
-              </div>
               <button 
                 onClick={() => submitQuiz()}
                 disabled={isSubmitting}
@@ -460,13 +458,14 @@ export default function App() {
               
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 mb-8 text-blue-900 text-[15px] leading-relaxed">
                 <p className="font-semibold mb-2">Hướng dẫn:</p>
-                <p className="mb-2">Các đội thi sử dụng mã để Bắt đầu thi, ví dụ:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2 font-medium">
+                <p className="mb-2">Các đội thi sử dụng mã để Bắt đầu thi:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2 font-medium mb-3">
                   <li>Công trường 1 – CT1</li>
                   <li>Công trường 2 – CT2</li>
                   <li>Phân xưởng 4 – PX4</li>
                   <li>Cơ quan – CQ</li>
                 </ul>
+                <p>Các cá nhân khác muốn thử sức hãy bỏ tích ở mục <strong>Lưu kết quả lên bảng xếp hạng</strong></p>
               </div>
 
               <div className="space-y-0 text-[15px]">
