@@ -4,7 +4,7 @@ service cloud.firestore {
     match /{document=**} { allow read, write: if false; }
     
     function isValidId(id) { 
-        return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+        return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$'); 
     }
     
     function incoming() { 
@@ -19,10 +19,10 @@ service cloud.firestore {
       return hasOnlyAllowedFields(data, ['uid', 'teamName', 'score', 'totalQuestions', 'submittedAt']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
              data.teamName is string && data.teamName.size() > 0 && data.teamName.size() <= 100 &&
-             data.score is number && data.score >= 0 && data.score <= 15 &&
-             data.totalQuestions is number && data.totalQuestions == 15 &&
+             data.score is number && data.score >= 0 && data.score <= 25 &&
+             data.totalQuestions is number && data.totalQuestions == 25 &&
              data.submittedAt is number &&
-             (!('timeTaken' in data) || data.timeTaken is number);
+             (!('timeTaken' in data) || (data.timeTaken is number && data.timeTaken >= 0));
     }
     
     match /results/{resultId} {
