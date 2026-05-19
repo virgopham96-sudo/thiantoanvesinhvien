@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} { allow read, write: if false; }
+    
+    function isValidId(id) { 
+        return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function incoming() { 
+        return request.resource.data; 
+    }
+    
+    function hasOnlyAllowedFields(data, fields) {
+      return data.keys().hasOnly(fields) || data.keys().hasOnly(fields.concat(['timeTaken']));
+    }
+    
+    function isValidResult(data) {
+      return hasOnlyAllowedFields(data, ['uid', 'teamName', 'score', 'totalQuestions', 'submittedAt']) &&
+             data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
+             data.teamName is string && data.teamName.size() > 0 && data.teamName.size() <= 100 &&
+             data.score is number && data.score >= 0 && data.score <= 15 &&
+             data.totalQuestions is number && data.totalQuestions == 15 &&
+             data.submittedAt is number &&
+             (!('timeTaken' in data) || data.timeTaken is number);
+    }
+    
+    match /results/{resultId} {
+      allow read: if true;
+      allow create: if isValidId(resultId) && isValidResult(incoming());
+      allow update: if false;
+      allow delete: if true;  // Note: Client-side password relies on this being true
+    }
+  }
+}
