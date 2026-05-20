@@ -5,7 +5,7 @@ import { Trophy, CheckCircle2, AlertCircle, Clock, ArrowLeft, Home, Calendar, He
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 
-type AppState = 'setup' | 'quiz' | 'result' | 'leaderboard';
+type AppState = 'setup' | 'quiz' | 'result' | 'leaderboard' | 'review';
 type AnyQuestion = Question | ArrangementQuestion;
 
 interface QuizResult {
@@ -83,7 +83,23 @@ export default function App() {
       selectedArrangement = px4ArrangementQuestions;
     }
     
-    const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20);
+    const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20).map(q => {
+      if (q.type === 'multiple-choice') {
+        const correctAnswerText = q.options.find(opt => opt.id === q.correctAnswer)?.text;
+        const letters = ['A', 'B', 'C', 'D', 'E', 'F']; // letters array handle up to 6 options
+        const shuffledOptions = shuffleArray(q.options).map((opt, idx) => ({
+          ...opt,
+          id: letters[idx]
+        }));
+        const newCorrectAnswerId = shuffledOptions.find(opt => opt.text === correctAnswerText)?.id || q.correctAnswer;
+        return {
+          ...q,
+          options: shuffledOptions,
+          correctAnswer: newCorrectAnswerId
+        };
+      }
+      return q;
+    });
     const shuffledArrangement = shuffleArray(selectedArrangement).slice(0, 5).map(q => ({
       ...q,
       items: shuffleArray(q.items) 
@@ -282,11 +298,11 @@ export default function App() {
         </header>
       )}
 
-      {appState === 'quiz' && (
+      {(appState === 'quiz' || appState === 'review') && (
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm relative">
           <div className="mx-auto px-4 lg:px-8 py-3 flex flex-wrap gap-4 justify-between items-center">
             <button 
-              onClick={handleReturnHome}
+              onClick={() => appState === 'review' ? setAppState('result') : handleReturnHome()}
               className="flex items-center gap-1 text-slate-600 border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-sm font-medium"
             >
               <ChevronLeft className="w-4 h-4" /> Quay lại
@@ -297,32 +313,43 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-5">
-              <div className={`flex items-center gap-2 font-bold text-[15px] transition-colors ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-slate-800'}`}>
-                <Clock className={`w-5 h-5 ${timeLeft <= 60 ? 'text-red-600' : 'text-slate-600'}`} />
-                <span>
-                  00 : {Math.floor(timeLeft / 60).toString().padStart(2, '0')} : {(timeLeft % 60).toString().padStart(2, '0')}
-                </span>
-              </div>
-              <button 
-                onClick={() => submitQuiz()}
-                disabled={isSubmitting}
-                className="flex items-center gap-2 bg-[#2d4b8e] hover:bg-[#203a73] text-white px-5 py-2 rounded font-semibold text-[15px] transition-colors"
-              >
-                <Edit className="w-4 h-4" /> Nộp bài
-              </button>
+              {appState === 'quiz' ? (
+                <>
+                  <div className={`flex items-center gap-2 font-bold text-[15px] transition-colors ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-slate-800'}`}>
+                    <Clock className={`w-5 h-5 ${timeLeft <= 60 ? 'text-red-600' : 'text-slate-600'}`} />
+                    <span>
+                      00 : {Math.floor(timeLeft / 60).toString().padStart(2, '0')} : {(timeLeft % 60).toString().padStart(2, '0')}
+                    </span>
+                  </div>
+                  <button 
+                    onClick={() => submitQuiz()}
+                    disabled={isSubmitting}
+                    className="flex items-center gap-2 bg-[#2d4b8e] hover:bg-[#203a73] text-white px-5 py-2 rounded font-semibold text-[15px] transition-colors"
+                  >
+                    <Edit className="w-4 h-4" /> Nộp bài
+                  </button>
+                </>
+              ) : (
+                <div className="font-semibold text-green-600 text-[15px] flex items-center gap-2">
+                  <CheckCircle2 className="w-5 h-5" />
+                  Điểm: {score} / {currentQuestions.length}
+                </div>
+              )}
             </div>
           </div>
           {/* Time Progress Bar */}
-          <div className="absolute bottom-0 left-0 h-1 bg-slate-100 w-full">
-            <div 
-              className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 60 ? 'bg-red-500' : 'bg-blue-600'}`}
-              style={{ width: `${(timeLeft / (15 * 60)) * 100}%` }}
-            />
-          </div>
+          {appState === 'quiz' && (
+            <div className="absolute bottom-0 left-0 h-1 bg-slate-100 w-full">
+              <div 
+                className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 60 ? 'bg-red-500' : 'bg-blue-600'}`}
+                style={{ width: `${(timeLeft / (15 * 60)) * 100}%` }}
+              />
+            </div>
+          )}
         </header>
       )}
 
-      <main className={appState === 'quiz' ? "mx-auto px-4 lg:px-8 py-6 max-w-[1440px]" : "max-w-4xl mx-auto px-4 py-8"}>
+      <main className={(appState === 'quiz' || appState === 'review') ? "mx-auto px-4 lg:px-8 py-6 max-w-[1440px]" : "max-w-4xl mx-auto px-4 py-8"}>
         {showNameModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
@@ -518,7 +545,7 @@ export default function App() {
           </div>
         )}
 
-        {appState === 'quiz' && (
+        {(appState === 'quiz' || appState === 'review') && (
           <div className="flex flex-col lg:flex-row gap-6 relative items-start">
             {/* Left: Questions column */}
             <div className="flex-1 space-y-6 min-w-0">
@@ -530,63 +557,138 @@ export default function App() {
 
                     {q.type === 'multiple-choice' ? (
                       <div className="space-y-4">
-                        {q.options.map((opt) => (
-                          <label 
-                            key={opt.id} 
-                            className="flex items-center gap-4 cursor-pointer group"
-                          >
-                            <div className={`w-10 h-10 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${
-                              answers[q.id] === opt.id 
-                                ? 'border-[#2d4b8e] bg-[#2d4b8e] text-white' 
-                                : 'border-slate-300 text-slate-700 bg-white group-hover:border-slate-400'
-                            }`}>
-                              {opt.id}
-                            </div>
-                            <div className={`flex-1 border rounded-md py-3 px-4 transition-colors ${
-                              answers[q.id] === opt.id 
-                                ? 'border-[#2d4b8e] text-[#2d4b8e] bg-[#f0f4fb] shadow-sm font-medium' 
-                                : 'border-slate-300 text-slate-700 bg-white group-hover:border-slate-400'
-                            }`}>
-                              {opt.text}
-                            </div>
-                            <input 
-                              type="radio" 
-                              name={`question-${q.id}`} 
-                              value={opt.id}
-                              checked={answers[q.id] === opt.id}
-                              onChange={() => handleAnswer(q.id, opt.id)}
-                              className="hidden"
-                            />
-                          </label>
-                        ))}
+                        {q.options.map((opt) => {
+                          const isSelected = answers[q.id] === opt.id;
+                          const isCorrect = q.correctAnswer === opt.id;
+                          const isReviewMode = appState === 'review';
+                          let circleClasses = 'border-slate-300 text-slate-700 bg-white group-hover:border-slate-400';
+                          let boxClasses = 'border-slate-300 text-slate-700 bg-white group-hover:border-slate-400';
+
+                          if (isReviewMode) {
+                            if (isCorrect) {
+                              circleClasses = 'border-green-600 bg-green-600 text-white';
+                              boxClasses = 'border-green-600 text-green-700 bg-green-50 font-medium';
+                            } else if (isSelected && !isCorrect) {
+                              circleClasses = 'border-red-500 bg-red-500 text-white';
+                              boxClasses = 'border-red-500 text-red-600 bg-red-50 font-medium';
+                            } else {
+                              circleClasses = 'border-slate-300 text-slate-400 bg-slate-50';
+                              boxClasses = 'border-slate-300 text-slate-500 bg-slate-50 opacity-70';
+                            }
+                          } else {
+                            if (isSelected) {
+                              circleClasses = 'border-[#2d4b8e] bg-[#2d4b8e] text-white';
+                              boxClasses = 'border-[#2d4b8e] text-[#2d4b8e] bg-[#f0f4fb] shadow-sm font-medium';
+                            }
+                          }
+
+                          return (
+                            <label 
+                              key={opt.id} 
+                              className={`flex items-center gap-4 ${!isReviewMode ? 'cursor-pointer group' : ''}`}
+                            >
+                              <div className={`w-10 h-10 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${circleClasses}`}>
+                                {opt.id}
+                              </div>
+                              <div className={`flex-1 border rounded-md py-3 px-4 transition-colors ${boxClasses}`}>
+                                {opt.text}
+                              </div>
+                              {!isReviewMode && (
+                                <input 
+                                  type="radio" 
+                                  name={`question-${q.id}`} 
+                                  value={opt.id}
+                                  checked={isSelected}
+                                  onChange={() => handleAnswer(q.id, opt.id)}
+                                  className="hidden"
+                                />
+                              )}
+                            </label>
+                          );
+                        })}
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        <p className="text-sm text-slate-500 mb-2 italic">Hãy dùng nút Lên/Xuống để sắp xếp các phương án sau theo thứ tự đúng đắn.</p>
-                        {(answers[q.id] || []).map((item: string, i: number) => (
-                          <div key={i} className="flex items-center gap-3 bg-white border border-slate-300 hover:border-[#2d4b8e] rounded-md p-3 transition-colors shadow-sm">
-                            <div className="flex flex-col gap-1 items-center justify-center border-r border-slate-200 pr-3">
-                              <button 
-                                onClick={() => moveArrangement(q.id, i, -1)} 
-                                disabled={i === 0}
-                                className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
-                              >
-                                <ArrowUp className="w-5 h-5" />
-                              </button>
-                              <button 
-                                onClick={() => moveArrangement(q.id, i, 1)} 
-                                disabled={i === answers[q.id].length - 1}
-                                className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
-                              >
-                                <ArrowDown className="w-5 h-5" />
-                              </button>
-                            </div>
-                            <div className="flex-1 text-[15px] text-slate-700 font-medium">{item}</div>
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-bold shrink-0">
-                               {i + 1}
-                            </div>
-                          </div>
-                        ))}
+                        {appState !== 'review' ? (
+                          <>
+                            <p className="text-sm text-slate-500 mb-2 italic">Hãy dùng nút Lên/Xuống để sắp xếp các phương án sau theo thứ tự đúng đắn.</p>
+                            {(answers[q.id] || []).map((item: string, i: number) => (
+                              <div key={i} className="flex items-center gap-3 bg-white border border-slate-300 hover:border-[#2d4b8e] rounded-md p-3 transition-colors shadow-sm">
+                                <div className="flex flex-col gap-1 items-center justify-center border-r border-slate-200 pr-3">
+                                  <button 
+                                    onClick={() => moveArrangement(q.id, i, -1)} 
+                                    disabled={i === 0}
+                                    className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
+                                  >
+                                    <ArrowUp className="w-5 h-5" />
+                                  </button>
+                                  <button 
+                                    onClick={() => moveArrangement(q.id, i, 1)} 
+                                    disabled={i === answers[q.id].length - 1}
+                                    className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
+                                  >
+                                    <ArrowDown className="w-5 h-5" />
+                                  </button>
+                                </div>
+                                <div className="flex-1 text-[15px] text-slate-700 font-medium">{item}</div>
+                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-bold shrink-0">
+                                   {i + 1}
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-slate-500 mb-2 italic">Đáp án đúng của câu sắp xếp:</p>
+                            {(() => {
+                              const originalQ = [...arrangementQuestions, ...px4ArrangementQuestions].find(a => a.id === q.id);
+                              const isCorrect = originalQ && JSON.stringify(answers[q.id]) === JSON.stringify(originalQ.items);
+                              
+                              return (
+                                <div className="space-y-4">
+                                  {/* User's Answer */}
+                                  <div>
+                                    <p className="mb-2 font-medium text-[15px] flex items-center gap-2">
+                                      Lựa chọn của bạn: 
+                                      {isCorrect ? (
+                                        <span className="text-green-600 font-bold flex items-center gap-1"><CheckCircle2 className="w-4 h-4"/> Đúng</span>
+                                      ) : (
+                                        <span className="text-red-500 font-bold flex items-center gap-1"><AlertCircle className="w-4 h-4"/> Sai</span>
+                                      )}
+                                    </p>
+                                    <div className="space-y-2">
+                                      {(answers[q.id] || []).map((item: string, i: number) => (
+                                        <div key={i} className={`flex items-center gap-3 border rounded-md p-3 ${isCorrect ? 'border-green-600 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-sm font-bold shrink-0 shadow-sm">
+                                            {i + 1}
+                                          </div>
+                                          <div className={`flex-1 text-[15px] font-medium ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{item}</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Correct Answer (if wrong) */}
+                                  {!isCorrect && originalQ && (
+                                    <div>
+                                      <p className="mb-2 font-medium text-[15px] text-green-700">Đáp án đúng:</p>
+                                      <div className="space-y-2">
+                                        {originalQ.items.map((item: string, i: number) => (
+                                          <div key={i} className="flex items-center gap-3 border border-green-600 bg-green-50 rounded-md p-3">
+                                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-sm font-bold shrink-0 shadow-sm">
+                                              {i + 1}
+                                            </div>
+                                            <div className="flex-1 text-[15px] text-green-800 font-medium">{item}</div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -649,12 +751,18 @@ export default function App() {
               </p>
             </div>
 
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-wrap gap-4 justify-center">
               <button 
                 onClick={resetToSetup}
                 className="bg-slate-100 text-slate-700 font-medium py-3 px-6 rounded-lg hover:bg-slate-200 transition-colors"
               >
                 Về trang chủ
+              </button>
+              <button 
+                onClick={() => setAppState('review')}
+                className="bg-green-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-green-700 transition-colors inline-block cursor-pointer"
+              >
+                Xem lại bài làm
               </button>
               <button 
                 onClick={fetchLeaderboard}
