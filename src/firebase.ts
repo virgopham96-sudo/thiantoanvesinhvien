@@ -1,4 +1,4 @@
-import { initializeApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import localFirebaseConfig from "../firebase-applet-config.json";
@@ -14,9 +14,23 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || (localFirebaseConfig as any).firestoreDatabaseId
 };
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
-export const auth = getAuth(app);
+// Only initialize if we have at least an API key to prevent crashing (e.g. during Netlify deploy with missing env vars)
+let app;
+let db: ReturnType<typeof getFirestore>;
+let auth: ReturnType<typeof getAuth>;
+
+if (firebaseConfig.apiKey && firebaseConfig.projectId) {
+  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+  db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  auth = getAuth(app);
+} else {
+  console.warn("Firebase configuration is missing! Please set the VITE_FIREBASE_* environment variables.");
+  // Export dummy objects or the app will crash if users try to use DB features without setup
+  db = {} as any;
+  auth = { currentUser: null } as any;
+}
+
+export { app, db, auth };
 
 export enum OperationType {
   CREATE = 'create',
