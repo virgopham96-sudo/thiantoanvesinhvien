@@ -68,23 +68,37 @@ export default function App() {
   };
 
   const confirmStartQuiz = () => {
-    if (!teamName.trim()) {
-      setError('Vui lòng nhập tên đăng ký dự thi');
+    if (saveToLeaderboard && !teamName.trim()) {
+      setError('Vui lòng chọn đội thi');
       return;
     }
+    
+    const finalTeamName = teamName.trim() || 'Thí sinh tự do';
+    setTeamName(finalTeamName);
+
     setError('');
     setAnswers({});
     
     let selectedMCQ = multipleChoiceQuestions;
     let selectedArrangement = arrangementQuestions;
 
-    if (teamName.trim().toUpperCase() === 'PX4') {
+    const isPX4 = finalTeamName.toLowerCase().replace(/\s+/g, ' ').includes('phân xưởng 4') || finalTeamName.toLowerCase().includes('px4');
+
+    if (isPX4) {
       selectedMCQ = px4MultipleChoiceQuestions;
-      selectedArrangement = px4ArrangementQuestions;
     }
     
     const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20).map(q => {
       if (q.type === 'multiple-choice') {
+        const hasFixedOptions = q.options.some(opt => {
+          const t = opt.text.toLowerCase();
+          return t.includes('tất cả') || t.includes('cả a') || t.includes('cả b') || t.includes('cả c') || t.includes('phương án trên') || t.includes('đáp án trên') || t.includes('cả 2') || t.includes('cả hai') || t.includes('đều đúng');
+        });
+
+        if (hasFixedOptions) {
+          return q;
+        }
+
         const correctAnswerText = q.options.find(opt => opt.id === q.correctAnswer)?.text;
         const letters = ['A', 'B', 'C', 'D', 'E', 'F']; // letters array handle up to 6 options
         const shuffledOptions = shuffleArray(q.options).map((opt, idx) => ({
@@ -100,17 +114,11 @@ export default function App() {
       }
       return q;
     });
-    const shuffledArrangement = shuffleArray(selectedArrangement).slice(0, 5).map(q => ({
-      ...q,
-      items: shuffleArray(q.items) 
-    }));
-    const allQs = [...shuffledMC, ...shuffledArrangement];
-    setCurrentQuestions(allQs);
     
+    let allQs = [...shuffledMC];
     const initialAnswers: Record<number, any> = {};
-    shuffledArrangement.forEach(q => {
-      initialAnswers[q.id] = [...q.items];
-    });
+
+    setCurrentQuestions(allQs);
     setAnswers(initialAnswers);
     
     setTimeLeft(15 * 60);
@@ -356,18 +364,33 @@ export default function App() {
               <h3 className="text-xl font-bold text-slate-800 mb-4">Nhập thông tin dự thi</h3>
               <div className="mb-6">
                 <label htmlFor="teamName" className="block text-sm font-medium text-slate-700 mb-2">
-                  Họ tên / Tên đội thi
+                  {saveToLeaderboard ? 'Tên đội thi' : 'Họ tên / Tên đội thi (Tùy chọn)'}
                 </label>
-                <input
-                  type="text"
-                  id="teamName"
-                  value={teamName}
-                  onChange={(e) => setTeamName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && confirmStartQuiz()}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#ea580c] focus:border-[#ea580c] outline-none transition-all"
-                  placeholder="Ví dụ: Nguyễn Văn A"
-                  maxLength={100}
-                />
+                {saveToLeaderboard ? (
+                  <select
+                    id="teamName"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#ea580c] focus:border-[#ea580c] outline-none transition-all"
+                  >
+                    <option value="">-- Chọn đội thi --</option>
+                    <option value="Công trường 1">Công trường 1</option>
+                    <option value="Công trường 2">Công trường 2</option>
+                    <option value="Phân xưởng 4">Phân xưởng 4</option>
+                    <option value="Cơ quan">Cơ quan</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    id="teamName"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && confirmStartQuiz()}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#ea580c] focus:border-[#ea580c] outline-none transition-all"
+                    placeholder="Nhập tên của bạn"
+                    maxLength={100}
+                  />
+                )}
               </div>
               <div className="mb-6 flex items-center gap-2">
                 <input 
@@ -485,13 +508,7 @@ export default function App() {
               
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 mb-8 text-blue-900 text-[15px] leading-relaxed">
                 <p className="font-semibold mb-2">Hướng dẫn:</p>
-                <p className="mb-2">Các đội thi sử dụng mã để Bắt đầu thi:</p>
-                <ul className="list-disc list-inside space-y-1 ml-2 font-medium mb-3">
-                  <li>Công trường 1 – CT1</li>
-                  <li>Công trường 2 – CT2</li>
-                  <li>Phân xưởng 4 – PX4</li>
-                  <li>Cơ quan – CQ</li>
-                </ul>
+                <p className="mb-2">Các đội thi chọn tên đơn vị từ danh sách để Bắt đầu thi.</p>
                 <p>Các cá nhân khác muốn thử sức hãy bỏ tích ở mục <strong>Lưu kết quả lên bảng xếp hạng</strong></p>
               </div>
 
@@ -508,21 +525,21 @@ export default function App() {
                     <Calendar className="w-[18px] h-[18px] text-slate-600" />
                     <span>Thời gian vào thi</span>
                   </div>
-                  <span className="font-semibold text-slate-800">Không thời hạn</span>
+                  <span className="font-semibold text-slate-800">28/05/2025</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
                   <div className="flex items-center gap-3 text-slate-700">
                     <HelpCircle className="w-[18px] h-[18px] text-slate-600" />
                     <span>Số lượng câu hỏi</span>
                   </div>
-                  <span className="font-semibold text-slate-800">25 (20 Trắc nghiệm, 5 Sắp xếp)</span>
+                  <span className="font-semibold text-slate-800">20 câu</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
                   <div className="flex items-center gap-3 text-slate-700">
                     <FileText className="w-[18px] h-[18px] text-slate-600" />
                     <span>Loại đề</span>
                   </div>
-                  <span className="font-semibold text-slate-800">Trắc nghiệm & Sắp xếp</span>
+                  <span className="font-semibold text-slate-800">Trắc nghiệm</span>
                 </div>
               </div>
 

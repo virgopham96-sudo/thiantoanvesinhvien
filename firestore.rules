@@ -19,8 +19,8 @@ service cloud.firestore {
       return hasOnlyAllowedFields(data, ['uid', 'teamName', 'score', 'totalQuestions', 'submittedAt']) &&
              data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128 &&
              data.teamName is string && data.teamName.size() > 0 && data.teamName.size() <= 100 &&
-             data.score is number && data.score >= 0 && data.score <= 25 &&
-             data.totalQuestions is number && data.totalQuestions == 25 &&
+             data.score is number && data.score >= 0 && data.score <= data.totalQuestions &&
+             data.totalQuestions is number && (data.totalQuestions == 25 || data.totalQuestions == 20) &&
              data.submittedAt is number &&
              (!('timeTaken' in data) || (data.timeTaken is number && data.timeTaken >= 0));
     }
