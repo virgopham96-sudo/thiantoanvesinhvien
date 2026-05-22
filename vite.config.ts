@@ -1,7 +1,14 @@
+import fs from 'fs';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig, loadEnv} from 'vite';
+
+// Ensure firebase-applet-config.json exists to prevent build errors on external platforms (e.g., Netlify)
+const firebaseConfigPath = path.resolve(__dirname, 'firebase-applet-config.json');
+if (!fs.existsSync(firebaseConfigPath)) {
+  fs.writeFileSync(firebaseConfigPath, '{}');
+}
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');

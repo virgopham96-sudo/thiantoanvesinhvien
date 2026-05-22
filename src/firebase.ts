@@ -1,7 +1,18 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import firebaseConfig from "../firebase-applet-config.json";
+import localFirebaseConfig from "../firebase-applet-config.json";
+
+// Merge local config (if any) with environment variables for external deployment support (like Netlify)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (localFirebaseConfig as any).apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || (localFirebaseConfig as any).authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || (localFirebaseConfig as any).projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || (localFirebaseConfig as any).storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || (localFirebaseConfig as any).messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || (localFirebaseConfig as any).appId,
+  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || (localFirebaseConfig as any).firestoreDatabaseId
+};
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
