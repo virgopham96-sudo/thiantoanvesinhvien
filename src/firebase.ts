@@ -3,15 +3,26 @@ import { getFirestore, doc, getDocFromServer } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import localFirebaseConfig from "../firebase-applet-config.json";
 
+// Default config for external deployments when env vars / local config are missing
+const defaultFirebaseConfig = {
+  projectId: "deft-vista-207pf",
+  appId: "1:204919087418:web:981346f498c194f5a6b003",
+  apiKey: "AIzaSyB6jqXjRouclwAe3MY5ipQ3Y0rTjmGiXhY",
+  authDomain: "deft-vista-207pf.firebaseapp.com",
+  firestoreDatabaseId: "ai-studio-bc6ca53a-c386-4e99-834d-03afbe770e98",
+  storageBucket: "deft-vista-207pf.firebasestorage.app",
+  messagingSenderId: "204919087418"
+};
+
 // Merge local config (if any) with environment variables for external deployment support (like Netlify)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (localFirebaseConfig as any).apiKey,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || (localFirebaseConfig as any).authDomain,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || (localFirebaseConfig as any).projectId,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || (localFirebaseConfig as any).storageBucket,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || (localFirebaseConfig as any).messagingSenderId,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || (localFirebaseConfig as any).appId,
-  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || (localFirebaseConfig as any).firestoreDatabaseId
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || (localFirebaseConfig as any).apiKey || defaultFirebaseConfig.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || (localFirebaseConfig as any).authDomain || defaultFirebaseConfig.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || (localFirebaseConfig as any).projectId || defaultFirebaseConfig.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || (localFirebaseConfig as any).storageBucket || defaultFirebaseConfig.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || (localFirebaseConfig as any).messagingSenderId || defaultFirebaseConfig.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || (localFirebaseConfig as any).appId || defaultFirebaseConfig.appId,
+  firestoreDatabaseId: import.meta.env.VITE_FIRESTORE_DATABASE_ID || (localFirebaseConfig as any).firestoreDatabaseId || defaultFirebaseConfig.firestoreDatabaseId
 };
 
 // Only initialize if we have at least an API key to prevent crashing (e.g. during Netlify deploy with missing env vars)
