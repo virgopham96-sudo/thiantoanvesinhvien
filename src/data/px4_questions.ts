@@ -6,7 +6,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Người lao động làm việc trong điều kiện có yếu tố nguy hiểm, độc hại có quyền yêu cầu người sử dụng lao động làm gì?",
     options: [
       { id: "A", text: "Tăng lương tương xứng với mức độ nguy hiểm" },
-      { id: "B", text: "Cung cấp thông tin đầy đủ về các yếu tố nguy hiểm, có hại và biện pháp phòng ngừa" },
+      { id: "B", text: "Cung cấp thông tin đầy đủ về các yếu tố nguy hiểm, có hại và biện pháp phòng ngừa." },
       { id: "C", text: "Cho phép từ chối làm việc bất kỳ lúc nào" },
       { id: "D", text: "Được miễn các quy định kỷ luật lao động" }
     ],
@@ -18,7 +18,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Theo Luật ATVSLĐ, An toàn vệ sinh viên được bầu như thế nào?",
     options: [
       { id: "A", text: "Do Giám đốc chỉ định theo đề xuất của Phòng An toàn" },
-      { id: "B", text: "Do tập thể người lao động bầu tại tổ, đội sản xuất" },
+      { id: "B", text: "Do tập thể người lao động bầu tại tổ, đội sản xuất." },
       { id: "C", text: "Do Công đoàn cơ sở bổ nhiệm" },
       { id: "D", text: "Do Phòng Tổ chức nhân sự quyết định" }
     ],
@@ -29,7 +29,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     id: 103,
     text: "Khi xảy ra tai nạn lao động, người sử dụng lao động phải khai báo với cơ quan có thẩm quyền trong thời gian bao lâu kể từ khi xảy ra tai nạn (đối với tai nạn chết người)?",
     options: [
-      { id: "A", text: "Ngay khi xảy ra tai nạn" },
+      { id: "A", text: "Ngay khi xảy ra tai nạn." },
       { id: "B", text: "Trong vòng 24 giờ" },
       { id: "C", text: "Trong vòng 48 giờ" },
       { id: "D", text: "Trong vòng 72 giờ" }
@@ -43,7 +43,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     options: [
       { id: "A", text: "Năm 2012" },
       { id: "B", text: "Năm 2013" },
-      { id: "C", text: "Năm 2015" },
+      { id: "C", text: "Năm 2015." },
       { id: "D", text: "Năm 2016" }
     ],
     correctAnswer: "C",
@@ -53,7 +53,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     id: 105,
     text: "Theo quy định, người sử dụng lao động phải tổ chức huấn luyện ATVSLĐ cho người lao động ít nhất bao nhiêu lần trong năm?",
     options: [
-      { id: "A", text: "1 lần/năm" },
+      { id: "A", text: "1 lần/năm." },
       { id: "B", text: "2 lần/năm" },
       { id: "C", text: "3 lần/năm" },
       { id: "D", text: "Theo yêu cầu thực tế" }
@@ -67,7 +67,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     options: [
       { id: "A", text: "Ban Chỉ huy - Giám đốc công ty" },
       { id: "B", text: "Phòng An toàn - Bảo hộ lao động" },
-      { id: "C", text: "Công đoàn cơ sở" },
+      { id: "C", text: "Công đoàn cơ sở." },
       { id: "D", text: "Hội đồng ATVSLĐ của doanh nghiệp" }
     ],
     correctAnswer: "C",
@@ -78,7 +78,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Thông tư số 142/2017/TT-BQP quy định về công tác ATVSLĐ trong Bộ Quốc phòng do cơ quan nào ban hành và vào ngày tháng năm nào?",
     options: [
       { id: "A", text: "Bộ Lao động - Thương binh và Xã hội, ngày 01/6/2017" },
-      { id: "B", text: "Bộ Quốc phòng, ngày 29/5/2017" },
+      { id: "B", text: "Bộ Quốc phòng, ngày 29/5/2017." },
       { id: "C", text: "Tổng LĐLĐ Việt Nam, ngày 29/5/2017" },
       { id: "D", text: "Ban Công đoàn Quốc phòng, ngày 29/5/2017" }
     ],
@@ -102,7 +102,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "An toàn vệ sinh viên có nhiệm vụ nào sau đây?",
     options: [
       { id: "A", text: "Lập biên bản xử phạt người vi phạm quy định ATVSLĐ" },
-      { id: "B", text: "Đôn đốc, nhắc nhở người lao động trong tổ, đội thực hiện quy định về ATVSLĐ" },
+      { id: "B", text: "Đôn đốc, nhắc nhở người lao động trong tổ, đội thực hiện quy định về ATVSLĐ." },
       { id: "C", text: "Quyết định dừng sản xuất khi phát hiện nguy cơ mất an toàn" },
       { id: "D", text: "Điều tra độc lập các tai nạn lao động xảy ra" }
     ],
@@ -125,7 +125,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Theo QCVN 24:2016/BYT, mức tiếp xúc cho phép với tiếng ồn của người lao động tại nơi làm việc bình thường trong 8 giờ tại các cơ sở sản xuất không được vượt quá bao nhiêu decibel (dBA)?",
     options: [
       { id: "A", text: "80dBA" },
-      { id: "B", text: "85dBA" },
+      { id: "B", text: "85dBA." },
       { id: "C", text: "90dB" },
       { id: "D", text: "95dB" }
     ],
@@ -138,7 +138,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     options: [
       { id: "A", text: "Các biện pháp kỹ thuật vệ sinh" },
       { id: "B", text: "Trang bị phương tiện bảo vệ cá nhân" },
-      { id: "C", text: "Biện pháp kỹ thuật công nghệ, kiểm soát tại nguồn phát sinh" },
+      { id: "C", text: "Biện pháp kỹ thuật công nghệ, kiểm soát tại nguồn phát sinh." },
       { id: "D", text: "Các biện pháp y tế, tổ chức và quản lý lao động" }
     ],
     correctAnswer: "C",
@@ -149,7 +149,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Thông tư số 19/2016/TT-BYT ngày 30/6/2016 của Bộ Y tế quy định trong hoạt động sơ cấp cứu, đối với vị trí làm việc có sử dụng hóa chất độc hoặc chất gây ăn mòn phải trang bị gì trong khu vực làm việc?",
     options: [
       { id: "A", text: "Bông băng" },
-      { id: "B", text: "Vòi tắm khẩn cấp" },
+      { id: "B", text: "Vòi tắm khẩn cấp." },
       { id: "C", text: "Cồn sát khuẩn" },
       { id: "D", text: "Betadine sát khuẩn" }
     ],
@@ -161,7 +161,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Chương trình 342/CTr-BCĐ ngày 19/01/2026 của Ban Chỉ đạo ATVSLĐ, PCBNN Bộ Quốc phòng giai đoạn 2026-2030 xác định 100% đơn vị lao động, sản xuất phải xây dựng nội dung nào sau đây?",
     options: [
       { id: "A", text: "Kế hoạch huấn luyện quân sự" },
-      { id: "B", text: "Phương án xử lý sự cố kỹ thuật gây mất ATVSLĐ nghiêm trọng" },
+      { id: "B", text: "Phương án xử lý sự cố kỹ thuật gây mất ATVSLĐ nghiêm trọng." },
       { id: "C", text: "Kế hoạch tuyển dụng" },
       { id: "D", text: "Phương án tài chính" }
     ],
@@ -175,7 +175,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
       { id: "A", text: "Virus viêm gan B" },
       { id: "B", text: "Virus HIV" },
       { id: "C", text: "Vi khuẩn lao" },
-      { id: "D", text: "Tất cả các yếu tố trên" }
+      { id: "D", text: "Tất cả các yếu tố trên." }
     ],
     correctAnswer: "D",
     type: 'multiple-choice'
@@ -184,7 +184,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     id: 116,
     text: "Sơ cấp cứu tại nơi làm việc có tính chất gì?",
     options: [
-      { id: "A", text: "Tính tạm thời" },
+      { id: "A", text: "Tính tạm thời." },
       { id: "B", text: "Tính chuyên môn cao và bắt buộc" },
       { id: "C", text: "Có tính trì hoãn" },
       { id: "D", text: "Có tính ổn định" }
@@ -196,7 +196,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     id: 117,
     text: "Chỉ thị 100/CT-BQP ngày 29/12/2016 của Bộ Quốc phòng yêu cầu kết hợp Tháng hành động ATVSLĐ với nội dung nào trước đây?",
     options: [
-      { id: "A", text: "Tuần lễ quốc gia về ATVSLĐ – PCCN" },
+      { id: "A", text: "Tuần lễ quốc gia về ATVSLĐ – PCCN." },
       { id: "B", text: "Ngày truyền thống ngành" },
       { id: "C", text: "Hội thao quân sự" },
       { id: "D", text: "Diễn tập khu vực phòng thủ" }
@@ -208,7 +208,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     id: 118,
     text: "Theo Chương trình 342/CTr-BCĐ ngày 19/01/2026 của Ban Chỉ đạo ATVSLĐ, PCBNN Bộ Quốc phòng giai đoạn 2026-2030 xác định hằng năm phải giảm trên bao nhiêu % tần suất TNLĐ chết người trong các ngành có nguy cơ cao?",
     options: [
-      { id: "A", text: "Trên 5%" },
+      { id: "A", text: "Trên 5%." },
       { id: "B", text: "Trên 7%" },
       { id: "C", text: "Trên 10%" },
       { id: "D", text: "Trên 15%" }
@@ -221,7 +221,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Theo Chương trình 342/CTr-BCĐ ngày 19/01/2026 của Ban Chỉ đạo ATVSLĐ, PCBNN Bộ Quốc phòng giai đoạn 2026-2030 xác định người làm công tác ATVSLĐ phải được huấn luyện tối thiểu:",
     options: [
       { id: "A", text: "01 lần/năm" },
-      { id: "B", text: "01 lần/02 năm" },
+      { id: "B", text: "01 lần/02 năm." },
       { id: "C", text: "02 lần/năm" },
       { id: "D", text: "01 lần/03 năm" }
     ],
@@ -233,7 +233,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Nội dung nào sau đây là trách nhiệm của Công đoàn cơ sở?",
     options: [
       { id: "A", text: "Tổ chức khám sức khỏe định kỳ" },
-      { id: "B", text: "Tuyên truyền, vận động người lao động chấp hành ATVSLĐ" },
+      { id: "B", text: "Tuyên truyền, vận động người lao động chấp hành ATVSLĐ." },
       { id: "C", text: "Trả lương cho người lao động" },
       { id: "D", text: "Xây dựng hợp đồng lao động" }
     ],
@@ -245,7 +245,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
     text: "Theo Luật ATVSLĐ năm 2015, khi phát hiện nơi làm việc có nguy cơ đe dọa nghiêm trọng đến tính mạng NLĐ, công đoàn có quyền:",
     options: [
       { id: "A", text: "Tự ý đình chỉ toàn bộ hoạt động đơn vị" },
-      { id: "B", text: "Yêu cầu tập thể, cá nhân có trách nhiệm thực hiện ngay biện pháp bảo đảm ATVSLĐ" },
+      { id: "B", text: "Yêu cầu tập thể, cá nhân có trách nhiệm thực hiện ngay biện pháp bảo đảm ATVSLĐ." },
       { id: "C", text: "Sa thải người vi phạm" },
       { id: "D", text: "Phạt tiền đơn vị" }
     ],

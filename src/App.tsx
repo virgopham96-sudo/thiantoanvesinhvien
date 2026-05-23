@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { multipleChoiceQuestions, arrangementQuestions, Question, ArrangementQuestion } from './data/questions';
 import { px4MultipleChoiceQuestions, px4ArrangementQuestions } from './data/px4_questions';
-import { Trophy, CheckCircle2, AlertCircle, Clock, ArrowLeft, Home, Calendar, HelpCircle, FileText, Users, QrCode, ChevronRight, ChevronLeft, Edit, Loader2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trophy, CheckCircle2, AlertCircle, Clock, ArrowLeft, Home, Calendar, HelpCircle, FileText, Users, QrCode, ChevronRight, ChevronLeft, ChevronDown, Edit, Loader2, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from './firebase';
 import { collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from 'firebase/firestore';
 
@@ -41,12 +41,14 @@ export default function App() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
+  const [showStartConfirmModal, setShowStartConfirmModal] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(15 * 60);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [saveToLeaderboard, setSaveToLeaderboard] = useState(true);
   const [clearPassword, setClearPassword] = useState('');
   const [clearPasswordError, setClearPasswordError] = useState('');
+  const [isQuestionListOpen, setIsQuestionListOpen] = useState(false);
 
   const submitQuizRef = useRef<((isAutoSubmit?: boolean | React.MouseEvent) => void) | null>(null);
 
@@ -67,6 +69,19 @@ export default function App() {
     setShowNameModal(true);
   };
 
+  const handlePreStartQuiz = () => {
+    if (saveToLeaderboard) {
+      if (!teamName.trim()) {
+        setError('Vui lòng chọn đội thi');
+        return;
+      }
+      setShowNameModal(false);
+      setShowStartConfirmModal(true);
+    } else {
+      confirmStartQuiz();
+    }
+  };
+
   const confirmStartQuiz = () => {
     if (saveToLeaderboard && !teamName.trim()) {
       setError('Vui lòng chọn đội thi');
@@ -82,13 +97,51 @@ export default function App() {
     let selectedMCQ = multipleChoiceQuestions;
     let selectedArrangement = arrangementQuestions;
 
-    const isPX4 = finalTeamName.toLowerCase().replace(/\s+/g, ' ').includes('phân xưởng 4') || finalTeamName.toLowerCase().includes('px4');
+    const finalTeamNameLower = finalTeamName.toLowerCase().replace(/\s+/g, ' ');
+    const normalizedName = finalTeamNameLower.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isPX4 = finalTeamNameLower.includes('phân xưởng 4') || 
+                  finalTeamNameLower.includes('px4') || 
+                  finalTeamNameLower.includes('px 4') ||
+                  normalizedName.includes('phan xuong 4');
 
     if (isPX4) {
       selectedMCQ = px4MultipleChoiceQuestions;
+      selectedArrangement = px4ArrangementQuestions;
     }
+
+    const isCoQuan = finalTeamNameLower.includes('cơ quan') || 
+                     normalizedName.includes('co quan');
+
+    const adjustedMCQ = selectedMCQ.map(q => {
+      if (q.type === 'multiple-choice') {
+        const adjustedOptions = q.options.map(opt => {
+          let text = opt.text;
+          const isCorrect = opt.id === q.correctAnswer;
+          
+          if (isCoQuan) {
+            if (isCorrect) {
+              while (text.endsWith('.')) {
+                text = text.slice(0, -1);
+              }
+              text = text + '.';
+            } else {
+              while (text.endsWith('.')) {
+                text = text.slice(0, -1);
+              }
+            }
+          } else {
+            while (text.endsWith('.')) {
+              text = text.slice(0, -1);
+            }
+          }
+          return { ...opt, text };
+        });
+        return { ...q, options: adjustedOptions };
+      }
+      return q;
+    });
     
-    const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20).map(q => {
+    const shuffledMC = shuffleArray(adjustedMCQ).slice(0, 20).map(q => {
       if (q.type === 'multiple-choice') {
         const hasFixedOptions = q.options.some(opt => {
           const t = opt.text.toLowerCase();
@@ -297,10 +350,10 @@ export default function App() {
     <div className={`min-h-screen font-sans text-slate-900 ${appState === 'quiz' ? 'bg-[#f4f6f9]' : 'bg-slate-50'}`}>
       {appState !== 'quiz' && (
         <header className="bg-blue-700 text-white shadow-md sticky top-0 z-20">
-          <div className="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
-            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2 cursor-pointer" onClick={handleReturnHome}>
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              HỘI THI AN TOÀN, VỆ SINH VIÊN GIỎI CẤP CƠ SỞ NĂM 2026
+          <div className="max-w-5xl mx-auto px-4 py-2 md:py-3 flex justify-between items-center">
+            <h1 className="text-base md:text-2xl font-bold flex items-center gap-2 md:gap-3 cursor-pointer leading-tight sm:leading-normal" onClick={handleReturnHome}>
+              <Trophy className="w-5 h-5 md:w-6 md:h-6 text-yellow-400 flex-shrink-0" />
+              <span className="line-clamp-2 md:line-clamp-none">HỘI THI AN TOÀN, VỆ SINH VIÊN GIỎI CẤP CƠ SỞ NĂM 2026</span>
             </h1>
           </div>
         </header>
@@ -308,39 +361,39 @@ export default function App() {
 
       {(appState === 'quiz' || appState === 'review') && (
         <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm relative">
-          <div className="mx-auto px-4 lg:px-8 py-3 flex flex-wrap gap-4 justify-between items-center">
+          <div className="mx-auto px-4 lg:px-8 py-2 md:py-3 flex flex-row gap-2 md:gap-4 justify-between items-center">
             <button 
               onClick={() => appState === 'review' ? setAppState('result') : handleReturnHome()}
-              className="flex items-center gap-1 text-slate-600 border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-sm font-medium"
+              className="flex items-center gap-1 text-slate-600 border border-slate-200 px-2 md:px-3 py-1.5 rounded hover:bg-slate-50 transition-colors text-[13px] md:text-sm font-medium shrink-0"
             >
-              <ChevronLeft className="w-4 h-4" /> Quay lại
+              <ChevronLeft className="w-4 h-4" /> <span className="hidden sm:inline">Quay lại</span>
             </button>
             
-            <div className="font-medium text-slate-800 text-[15px] hidden md:block">
+            <div className="font-medium text-slate-800 text-[15px] hidden md:block truncate max-w-[200px] lg:max-w-[400px]">
               Thí sinh: <span className="font-semibold">{teamName}</span>
             </div>
 
-            <div className="flex items-center gap-5">
+            <div className="flex items-center gap-3 md:gap-5 shrink-0">
               {appState === 'quiz' ? (
                 <>
-                  <div className={`flex items-center gap-2 font-bold text-[15px] transition-colors ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-slate-800'}`}>
-                    <Clock className={`w-5 h-5 ${timeLeft <= 60 ? 'text-red-600' : 'text-slate-600'}`} />
+                  <div className={`flex items-center gap-1.5 md:gap-2 font-bold text-[14px] md:text-[15px] transition-colors ${timeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-slate-800'}`}>
+                    <Clock className={`w-4 h-4 md:w-5 md:h-5 ${timeLeft <= 60 ? 'text-red-600' : 'text-slate-600'}`} />
                     <span>
-                      00 : {Math.floor(timeLeft / 60).toString().padStart(2, '0')} : {(timeLeft % 60).toString().padStart(2, '0')}
+                      {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:{(timeLeft % 60).toString().padStart(2, '0')}
                     </span>
                   </div>
                   <button 
                     onClick={() => submitQuiz()}
                     disabled={isSubmitting}
-                    className="flex items-center gap-2 bg-[#2d4b8e] hover:bg-[#203a73] text-white px-5 py-2 rounded font-semibold text-[15px] transition-colors"
+                    className="flex items-center gap-1 md:gap-2 bg-[#2d4b8e] hover:bg-[#203a73] text-white px-3 md:px-5 py-1.5 md:py-2 rounded font-semibold text-[13px] md:text-[15px] transition-colors shrink-0"
                   >
-                    <Edit className="w-4 h-4" /> Nộp bài
+                    <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" /> <span className="hidden sm:inline">Nộp bài</span><span className="sm:hidden">Nộp</span>
                   </button>
                 </>
               ) : (
-                <div className="font-semibold text-green-600 text-[15px] flex items-center gap-2">
-                  <CheckCircle2 className="w-5 h-5" />
-                  Điểm: {score} / {currentQuestions.length}
+                <div className="font-semibold text-green-600 text-[14px] md:text-[15px] flex items-center gap-1.5 md:gap-2">
+                  <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                  Điểm: {score} <span className="hidden sm:inline">/ {currentQuestions.length}</span>
                 </div>
               )}
             </div>
@@ -385,7 +438,7 @@ export default function App() {
                     id="teamName"
                     value={teamName}
                     onChange={(e) => setTeamName(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && confirmStartQuiz()}
+                    onKeyDown={(e) => e.key === 'Enter' && handlePreStartQuiz()}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#ea580c] focus:border-[#ea580c] outline-none transition-all"
                     placeholder="Nhập tên của bạn"
                     maxLength={100}
@@ -412,10 +465,38 @@ export default function App() {
                   Hủy
                 </button>
                 <button 
-                  onClick={confirmStartQuiz}
+                  onClick={handlePreStartQuiz}
                   className="px-5 py-2.5 bg-[#ea580c] text-white hover:bg-orange-700 rounded-lg font-medium transition-colors"
                 >
                   Bắt đầu làm bài
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showStartConfirmModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-lg max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-slate-800 mb-4">Xác nhận bắt đầu</h3>
+              <p className="text-slate-600 mb-6 leading-relaxed">
+                Bạn có chắc chắn tham gia cuộc thi với tư cách <strong className="text-slate-800">"{teamName.trim() || 'Thí sinh tự do'}"</strong> không? Kết quả này sẽ được lưu lại làm căn cứ xếp hạng.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setShowStartConfirmModal(false)}
+                  className="px-5 py-2.5 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
+                >
+                  Hủy
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowStartConfirmModal(false);
+                    confirmStartQuiz();
+                  }}
+                  className="px-5 py-2.5 bg-[#ea580c] text-white hover:bg-orange-700 rounded-lg font-medium transition-colors"
+                >
+                  Đồng ý
                 </button>
               </div>
             </div>
@@ -500,43 +581,39 @@ export default function App() {
         )}
 
         {appState === 'setup' && (
-          <div className="max-w-2xl mx-auto mt-6">
-            <div className="bg-white p-8 md:p-10 rounded-lg shadow-sm border border-slate-200">
-              <h2 className="text-xl md:text-2xl font-bold text-center mb-6 text-slate-800 leading-snug">
-                HỘI THI AN TOÀN, VỆ SINH VIÊN GIỎI CẤP CƠ SỞ NĂM 2026
-              </h2>
-              
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-5 mb-8 text-blue-900 text-[15px] leading-relaxed">
-                <p className="font-semibold mb-2">Hướng dẫn:</p>
-                <p className="mb-2">Các đội thi chọn tên đơn vị từ danh sách để Bắt đầu thi.</p>
+          <div className="max-w-2xl mx-auto mt-2 md:mt-4 px-4 h-[calc(100vh-60px)] md:h-auto overflow-hidden flex flex-col pt-[5vh] md:pt-0 pb-[10vh] md:pb-0">
+            <div className="bg-white p-3 md:p-6 rounded-lg shadow-sm border border-slate-200">
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-2 md:p-4 mb-3 text-blue-900 text-[13px] md:text-[15px] leading-relaxed">
+                <p className="font-semibold mb-0.5">Hướng dẫn:</p>
+                <p className="mb-0.5">Các đội thi chọn tên đơn vị từ danh sách để Bắt đầu thi.</p>
                 <p>Các cá nhân khác muốn thử sức hãy bỏ tích ở mục <strong>Lưu kết quả lên bảng xếp hạng</strong></p>
               </div>
 
-              <div className="space-y-0 text-[15px]">
-                <div className="flex justify-between items-center py-3">
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <Clock className="w-[18px] h-[18px] text-slate-600" />
+              <div className="space-y-0 text-[13px] md:text-[15px]">
+                <div className="flex justify-between items-center py-1.5 md:py-2">
+                  <div className="flex items-center gap-2 md:gap-3 text-slate-700">
+                    <Clock className="w-[14px] h-[14px] md:w-[18px] md:h-[18px] text-slate-600" />
                     <span>Thời gian làm bài</span>
                   </div>
                   <span className="font-semibold text-slate-800">15 phút</span>
                 </div>
-                <div className="flex justify-between items-center py-3">
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <Calendar className="w-[18px] h-[18px] text-slate-600" />
+                <div className="flex justify-between items-center py-1.5 md:py-2">
+                  <div className="flex items-center gap-2 md:gap-3 text-slate-700">
+                    <Calendar className="w-[14px] h-[14px] md:w-[18px] md:h-[18px] text-slate-600" />
                     <span>Thời gian vào thi</span>
                   </div>
                   <span className="font-semibold text-slate-800">28/05/2025</span>
                 </div>
-                <div className="flex justify-between items-center py-3">
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <HelpCircle className="w-[18px] h-[18px] text-slate-600" />
+                <div className="flex justify-between items-center py-1.5 md:py-2">
+                  <div className="flex items-center gap-2 md:gap-3 text-slate-700">
+                    <HelpCircle className="w-[14px] h-[14px] md:w-[18px] md:h-[18px] text-slate-600" />
                     <span>Số lượng câu hỏi</span>
                   </div>
                   <span className="font-semibold text-slate-800">20 câu</span>
                 </div>
-                <div className="flex justify-between items-center py-3">
-                  <div className="flex items-center gap-3 text-slate-700">
-                    <FileText className="w-[18px] h-[18px] text-slate-600" />
+                <div className="flex justify-between items-center py-1.5 md:py-2">
+                  <div className="flex items-center gap-2 md:gap-3 text-slate-700">
+                    <FileText className="w-[14px] h-[14px] md:w-[18px] md:h-[18px] text-slate-600" />
                     <span>Loại đề</span>
                   </div>
                   <span className="font-semibold text-slate-800">Trắc nghiệm</span>
@@ -545,16 +622,16 @@ export default function App() {
 
               <button 
                 onClick={handleStartClick}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded transition-colors flex justify-center items-center gap-2 text-base shadow-sm mt-6"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 md:py-3.5 px-4 rounded transition-colors flex justify-center items-center gap-2 text-sm md:text-base shadow-sm mt-3 md:mt-6"
               >
                 Bắt đầu thi <ChevronRight className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="text-center mt-6">
+            <div className="text-center mt-3 md:mt-4 mb-4 md:mb-6">
               <button 
                 onClick={fetchLeaderboard}
-                className="bg-[#f8fafc] border border-slate-200 text-slate-700 font-medium py-2.5 px-6 rounded hover:bg-slate-100 transition-colors inline-flex items-center justify-center gap-2 mx-auto cursor-pointer"
+                className="bg-[#f8fafc] border border-slate-200 text-slate-700 font-medium py-2 px-4 md:py-2.5 md:px-6 rounded hover:bg-slate-100 transition-colors inline-flex items-center justify-center gap-2 mx-auto cursor-pointer text-sm md:text-base"
               >
                 Xem lịch sử làm bài
               </button>
@@ -563,14 +640,14 @@ export default function App() {
         )}
 
         {(appState === 'quiz' || appState === 'review') && (
-          <div className="flex flex-col lg:flex-row gap-6 relative items-start">
+          <div className="flex flex-col-reverse lg:flex-row gap-6 relative items-start">
             {/* Left: Questions column */}
-            <div className="flex-1 space-y-6 min-w-0">
+            <div className="flex-1 space-y-6 min-w-0 w-full">
               {currentQuestions.map((q, index) => (
                 <div key={q.id} id={`question-${q.id}`} className="bg-white rounded border border-slate-200 overflow-hidden shadow-sm">
-                  <div className="p-6">
+                  <div className="p-4 md:p-6">
                     <h3 className="font-bold text-slate-800 mb-1 text-base">Câu {index + 1}</h3>
-                    <p className="text-slate-800 font-medium mb-6 text-[15px]">{q.text}</p>
+                    <p className="text-slate-800 font-medium mb-4 md:mb-6 text-[14px] md:text-[15px] leading-relaxed">{q.text}</p>
 
                     {q.type === 'multiple-choice' ? (
                       <div className="space-y-4">
@@ -602,12 +679,12 @@ export default function App() {
                           return (
                             <label 
                               key={opt.id} 
-                              className={`flex items-center gap-4 ${!isReviewMode ? 'cursor-pointer group' : ''}`}
+                              className={`flex items-center gap-3 md:gap-4 ${!isReviewMode ? 'cursor-pointer group' : ''}`}
                             >
-                              <div className={`w-10 h-10 rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${circleClasses}`}>
+                              <div className={`w-8 h-8 md:w-10 md:h-10 text-sm md:text-base rounded-full border flex flex-shrink-0 items-center justify-center transition-colors ${circleClasses}`}>
                                 {opt.id}
                               </div>
-                              <div className={`flex-1 border rounded-md py-3 px-4 transition-colors ${boxClasses}`}>
+                              <div className={`flex-1 border rounded-md py-2 md:py-3 px-3 md:px-4 transition-colors text-[14px] md:text-[15px] ${boxClasses}`}>
                                 {opt.text}
                               </div>
                               {!isReviewMode && (
@@ -630,25 +707,25 @@ export default function App() {
                           <>
                             <p className="text-sm text-slate-500 mb-2 italic">Hãy dùng nút Lên/Xuống để sắp xếp các phương án sau theo thứ tự đúng đắn.</p>
                             {(answers[q.id] || []).map((item: string, i: number) => (
-                              <div key={i} className="flex items-center gap-3 bg-white border border-slate-300 hover:border-[#2d4b8e] rounded-md p-3 transition-colors shadow-sm">
-                                <div className="flex flex-col gap-1 items-center justify-center border-r border-slate-200 pr-3">
+                              <div key={i} className="flex items-center gap-2 md:gap-3 bg-white border border-slate-300 hover:border-[#2d4b8e] rounded-md p-2 md:p-3 transition-colors shadow-sm">
+                                <div className="flex flex-col gap-1 items-center justify-center border-r border-slate-200 pr-2 md:pr-3">
                                   <button 
                                     onClick={() => moveArrangement(q.id, i, -1)} 
                                     disabled={i === 0}
                                     className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
                                   >
-                                    <ArrowUp className="w-5 h-5" />
+                                    <ArrowUp className="w-4 h-4 md:w-5 md:h-5" />
                                   </button>
                                   <button 
                                     onClick={() => moveArrangement(q.id, i, 1)} 
                                     disabled={i === answers[q.id].length - 1}
                                     className="p-1 hover:bg-slate-100 text-slate-500 disabled:opacity-30 disabled:hover:bg-transparent rounded"
                                   >
-                                    <ArrowDown className="w-5 h-5" />
+                                    <ArrowDown className="w-4 h-4 md:w-5 md:h-5" />
                                   </button>
                                 </div>
-                                <div className="flex-1 text-[15px] text-slate-700 font-medium">{item}</div>
-                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-sm font-bold shrink-0">
+                                <div className="flex-1 text-[13px] md:text-[15px] leading-snug md:leading-normal text-slate-700 font-medium">{item}</div>
+                                <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 text-xs md:text-sm font-bold shrink-0">
                                    {i + 1}
                                 </div>
                               </div>
@@ -675,11 +752,11 @@ export default function App() {
                                     </p>
                                     <div className="space-y-2">
                                       {(answers[q.id] || []).map((item: string, i: number) => (
-                                        <div key={i} className={`flex items-center gap-3 border rounded-md p-3 ${isCorrect ? 'border-green-600 bg-green-50' : 'border-red-300 bg-red-50'}`}>
-                                          <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-sm font-bold shrink-0 shadow-sm">
+                                        <div key={i} className={`flex items-center gap-2 md:gap-3 border rounded-md p-2 md:p-3 ${isCorrect ? 'border-green-600 bg-green-50' : 'border-red-300 bg-red-50'}`}>
+                                          <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-xs md:text-sm font-bold shrink-0 shadow-sm">
                                             {i + 1}
                                           </div>
-                                          <div className={`flex-1 text-[15px] font-medium ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{item}</div>
+                                          <div className={`flex-1 text-[13px] md:text-[15px] font-medium leading-snug md:leading-normal ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>{item}</div>
                                         </div>
                                       ))}
                                     </div>
@@ -691,11 +768,11 @@ export default function App() {
                                       <p className="mb-2 font-medium text-[15px] text-green-700">Đáp án đúng:</p>
                                       <div className="space-y-2">
                                         {originalQ.items.map((item: string, i: number) => (
-                                          <div key={i} className="flex items-center gap-3 border border-green-600 bg-green-50 rounded-md p-3">
-                                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-sm font-bold shrink-0 shadow-sm">
+                                          <div key={i} className="flex items-center gap-2 md:gap-3 border border-green-600 bg-green-50 rounded-md p-2 md:p-3">
+                                            <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center text-slate-500 text-xs md:text-sm font-bold shrink-0 shadow-sm">
                                               {i + 1}
                                             </div>
-                                            <div className="flex-1 text-[15px] text-green-800 font-medium">{item}</div>
+                                            <div className="flex-1 text-[13px] md:text-[15px] text-green-800 font-medium leading-snug md:leading-normal">{item}</div>
                                           </div>
                                         ))}
                                       </div>
@@ -715,9 +792,17 @@ export default function App() {
 
             {/* Right: Navigation column */}
             <div className="lg:w-80 shrink-0 lg:sticky lg:top-20 z-10 w-full mb-8 lg:mb-0">
-              <div className="bg-white rounded border border-slate-200 p-5 shadow-sm">
-                <h3 className="font-medium text-slate-800 mb-4 text-[15px]">Danh sách câu hỏi</h3>
-                <div className="grid grid-cols-5 gap-2">
+              <div className="bg-white rounded border border-slate-200 p-4 md:p-5 shadow-sm">
+                <button 
+                  onClick={() => setIsQuestionListOpen(!isQuestionListOpen)}
+                  className="w-full flex lg:hidden items-center justify-between font-medium text-slate-800 text-[15px]"
+                >
+                  <span>Danh sách câu hỏi</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${isQuestionListOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <h3 className="font-medium text-slate-800 mb-4 text-[15px] hidden lg:block">Danh sách câu hỏi</h3>
+                
+                <div className={`grid-cols-5 gap-2 mt-4 lg:mt-0 ${isQuestionListOpen ? 'grid' : 'hidden lg:grid'}`}>
                   {currentQuestions.map((q, index) => {
                     const isAnswered = !!answers[q.id];
                     return (
@@ -736,6 +821,7 @@ export default function App() {
                               behavior: 'smooth'
                             });
                           }
+                          setIsQuestionListOpen(false); // Close on mobile after selection
                         }}
                         className={`py-2 text-[13px] text-center border rounded transition-colors ${
                           isAnswered 
@@ -754,36 +840,44 @@ export default function App() {
         )}
 
         {appState === 'result' && (
-          <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 max-w-lg mx-auto text-center mt-10">
+          <div className="bg-white p-5 md:p-8 rounded-xl shadow-sm border border-slate-200 max-w-lg mx-auto text-center mt-10">
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <h2 className="text-3xl font-bold text-slate-800 mb-2">Hoàn thành!</h2>
-            <p className="text-slate-600 mb-8">Cảm ơn đội <span className="font-semibold text-blue-700">{teamName}</span> đã tham gia thi.</p>
+            <p className="text-slate-600 mb-6 md:mb-8">Cảm ơn đội <span className="font-semibold text-blue-700">{teamName}</span> đã tham gia thi.</p>
             
-            <div className="bg-slate-50 rounded-xl p-6 mb-8 border border-slate-100">
-              <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Điểm số của bạn</p>
-              <p className="text-5xl font-black text-blue-600">
-                {score} <span className="text-2xl text-slate-400 font-medium">/ {currentQuestions.length}</span>
-              </p>
+            <div className="bg-slate-50 rounded-xl p-4 md:p-6 mb-6 md:mb-8 border border-slate-100">
+              <div className="mb-4">
+                <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Điểm số của bạn</p>
+                <p className="text-4xl md:text-5xl font-black text-blue-600">
+                  {score} <span className="text-xl md:text-2xl text-slate-400 font-medium">/ {currentQuestions.length}</span>
+                </p>
+              </div>
+              <div className="border-t border-slate-200 pt-4">
+                <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Thời gian hoàn thành</p>
+                <p className="text-2xl font-bold text-slate-700">
+                  {Math.floor(((15 * 60) - timeLeft) / 60)} phút {((15 * 60) - timeLeft) % 60} giây
+                </p>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 md:gap-4 justify-center">
               <button 
                 onClick={resetToSetup}
-                className="bg-slate-100 text-slate-700 font-medium py-3 px-6 rounded-lg hover:bg-slate-200 transition-colors"
+                className="w-full sm:w-auto bg-slate-100 text-slate-700 font-medium py-2.5 md:py-3 px-4 md:px-6 rounded-lg hover:bg-slate-200 transition-colors"
               >
                 Về trang chủ
               </button>
               <button 
                 onClick={() => setAppState('review')}
-                className="bg-green-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-green-700 transition-colors inline-block cursor-pointer"
+                className="w-full sm:w-auto bg-green-600 text-white font-medium py-2.5 md:py-3 px-4 md:px-6 rounded-lg hover:bg-green-700 transition-colors inline-block cursor-pointer"
               >
                 Xem lại bài làm
               </button>
               <button 
                 onClick={fetchLeaderboard}
-                className="bg-blue-600 text-white font-medium py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors inline-block cursor-pointer"
+                className="w-full sm:w-auto bg-blue-600 text-white font-medium py-2.5 md:py-3 px-4 md:px-6 rounded-lg hover:bg-blue-700 transition-colors inline-block cursor-pointer"
               >
                 Xem lịch sử làm bài
               </button>
@@ -792,65 +886,65 @@ export default function App() {
         )}
 
         {appState === 'leaderboard' && (
-          <div className="bg-white p-6 md:p-8 rounded-xl shadow-sm border border-slate-200">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                <Trophy className="w-7 h-7 text-yellow-500" />
+          <div className="bg-white p-4 md:p-8 rounded-xl shadow-sm border border-slate-200">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                <Trophy className="w-6 h-6 md:w-7 md:h-7 text-yellow-500 shrink-0" />
                 Bảng xếp hạng
               </h2>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full sm:w-auto">
                 <button 
                   onClick={clearHistoryClick}
                   disabled={isClearingHistory}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50 text-sm font-medium flex items-center gap-1.5 px-3 py-1.5 rounded transition-colors disabled:opacity-50"
+                  className="flex-1 sm:flex-none text-red-500 justify-center hover:text-red-700 hover:bg-red-50 text-sm font-medium flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded transition-colors disabled:opacity-50"
                   title="Xoá toàn bộ lịch sử thi"
                 >
-                  {isClearingHistory ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                  Xoá lịch sử
+                  {isClearingHistory ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <Trash2 className="w-4 h-4 shrink-0" />}
+                  <span className="truncate">Xoá lịch sử</span>
                 </button>
                 <button 
                   onClick={resetToSetup}
-                  className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors"
+                  className="flex-1 sm:flex-none text-blue-600 justify-center hover:text-blue-800 font-medium flex items-center gap-1 bg-blue-50 hover:bg-blue-100 px-3 py-2 sm:py-1.5 rounded transition-colors"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Quay lại
+                  <ArrowLeft className="w-4 h-4 shrink-0" /> <span className="truncate">Quay lại</span>
                 </button>
               </div>
             </div>
 
             {leaderboard.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
+              <div className="text-center py-8 md:py-12 text-slate-500 text-sm md:text-base">
                 Chưa có kết quả nào được ghi nhận.
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto -mx-4 md:mx-0">
+                <table className="w-full text-left border-collapse min-w-[500px] md:min-w-0">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
-                      <th className="py-4 px-4 font-semibold text-slate-600 w-16 text-center">Hạng</th>
-                      <th className="py-4 px-4 font-semibold text-slate-600">Tên đội</th>
-                      <th className="py-4 px-4 font-semibold text-slate-600 text-center">Điểm số</th>
-                      <th className="py-4 px-4 font-semibold text-slate-600 text-right">Lượng thời gian làm bài</th>
+                      <th className="py-3 px-3 md:py-4 md:px-4 font-semibold text-slate-600 w-12 md:w-16 text-center text-[13px] md:text-base">Hạng</th>
+                      <th className="py-3 px-3 md:py-4 md:px-4 font-semibold text-slate-600 text-[13px] md:text-base">Tên đội</th>
+                      <th className="py-3 px-3 md:py-4 md:px-4 font-semibold text-slate-600 text-center text-[13px] md:text-base">Điểm số</th>
+                      <th className="py-3 px-3 md:py-4 md:px-4 font-semibold text-slate-600 text-right text-[13px] md:text-base">Lượng thời gian làm bài</th>
                     </tr>
                   </thead>
                   <tbody>
                     {leaderboard.map((result, index) => (
                       <tr key={result.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                        <td className="py-4 px-4 text-center">
+                        <td className="py-3 px-3 md:py-4 md:px-4 text-center">
                           {index === 0 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-yellow-100 text-yellow-700 rounded-full font-bold">1</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm bg-yellow-100 text-yellow-700 rounded-full font-bold">1</span>
                           ) : index === 1 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-slate-200 text-slate-700 rounded-full font-bold">2</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm bg-slate-200 text-slate-700 rounded-full font-bold">2</span>
                           ) : index === 2 ? (
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-orange-100 text-orange-800 rounded-full font-bold">3</span>
+                            <span className="inline-flex items-center justify-center w-6 h-6 md:w-8 md:h-8 text-xs md:text-sm bg-orange-100 text-orange-800 rounded-full font-bold">3</span>
                           ) : (
-                            <span className="text-slate-500 font-medium">{index + 1}</span>
+                            <span className="text-slate-500 font-medium text-sm md:text-base">{index + 1}</span>
                           )}
                         </td>
-                        <td className="py-4 px-4 font-medium text-slate-800">{result.teamName}</td>
-                        <td className="py-4 px-4 text-center font-bold text-blue-600">{result.score}/{result.totalQuestions}</td>
-                        <td className="py-4 px-4 text-right text-sm text-slate-500 font-medium flex items-center justify-end gap-1.5">
-                          <Clock className="w-4 h-4" />
-                          {formatTimeTaken(result.timeTaken)}
+                        <td className="py-3 px-3 md:py-4 md:px-4 font-medium text-slate-800 text-[14px] md:text-base">{result.teamName}</td>
+                        <td className="py-3 px-3 md:py-4 md:px-4 text-center font-bold text-blue-600 text-[14px] md:text-base">{result.score}/{result.totalQuestions}</td>
+                        <td className="py-3 px-3 md:py-4 md:px-4 text-right text-[13px] md:text-sm text-slate-500 font-medium flex items-center justify-end gap-1 md:gap-1.5">
+                          <Clock className="w-3.5 h-3.5 md:w-4 md:h-4 shrink-0" />
+                          <span className="whitespace-nowrap">{formatTimeTaken(result.timeTaken)}</span>
                         </td>
                       </tr>
                     ))}
