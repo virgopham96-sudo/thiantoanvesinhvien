@@ -201,13 +201,27 @@ export default function App() {
     const isAuto = typeof isAutoSubmit === 'boolean' ? isAutoSubmit : false;
     // Kiểm tra xem đã trả lời đủ câu chưa (MCQ only)
     const mcqQuestions = currentQuestions.filter(q => q.type === 'multiple-choice');
-    const answeredMCQ = mcqQuestions.filter(q => answers[q.id] !== undefined);
-    if (!isAuto && answeredMCQ.length < mcqQuestions.length) {
-      const missing = mcqQuestions.length - answeredMCQ.length;
+    const unanswered = mcqQuestions.filter(q => answers[q.id] === undefined);
+    if (!isAuto && unanswered.length > 0) {
+      const missing = unanswered.length;
       setError(`Vui lòng hoàn thành bài thi. Bạn còn thiếu ${missing} câu trắc nghiệm chưa trả lời.`);
       
-      // Cuộn lên đầu trang để người dùng thấy thông báo lỗi
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Cuộn đến câu chưa trả lời đầu tiên
+      const firstUnanswered = unanswered[0];
+      const el = document.getElementById(`question-${firstUnanswered.id}`);
+      if (el) {
+        const offset = 80;
+        const bodyRect = document.body.getBoundingClientRect().top;
+        const elementRect = el.getBoundingClientRect().top;
+        const elementPosition = elementRect - bodyRect;
+        const offsetPosition = elementPosition - offset;
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
 
