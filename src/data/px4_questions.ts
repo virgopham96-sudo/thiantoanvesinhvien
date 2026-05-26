@@ -213,7 +213,7 @@ export const px4MultipleChoiceQuestions: Question[] = [
       { id: "C", text: "Trên 10%" },
       { id: "D", text: "Trên 15%" }
     ],
-    correctAnswer: "C",
+    correctAnswer: "A",
     type: 'multiple-choice'
   },
   {
