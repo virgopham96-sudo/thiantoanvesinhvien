@@ -42,7 +42,7 @@ export default function App() {
   const [showClearConfirmModal, setShowClearConfirmModal] = useState(false);
   const [showNameModal, setShowNameModal] = useState(false);
   const [showStartConfirmModal, setShowStartConfirmModal] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(15 * 60);
+  const [timeLeft, setTimeLeft] = useState<number>(5 * 60);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [saveToLeaderboard, setSaveToLeaderboard] = useState(true);
@@ -174,7 +174,7 @@ export default function App() {
     setCurrentQuestions(allQs);
     setAnswers(initialAnswers);
     
-    setTimeLeft(15 * 60);
+    setTimeLeft(5 * 60);
     setAppState('quiz');
     setShowNameModal(false);
   };
@@ -241,7 +241,7 @@ export default function App() {
 
     setScore(calculatedScore);
 
-    const timeTaken = (15 * 60) - timeLeft;
+    const timeTaken = (5 * 60) - timeLeft;
 
     const newResult = {
       uid: `anon_${Math.random().toString(36).substring(2, 9)}`,
@@ -417,7 +417,7 @@ export default function App() {
             <div className="absolute bottom-0 left-0 h-1 bg-slate-100 w-full">
               <div 
                 className={`h-full transition-all duration-1000 ease-linear ${timeLeft <= 60 ? 'bg-red-500' : 'bg-blue-600'}`}
-                style={{ width: `${(timeLeft / (15 * 60)) * 100}%` }}
+                style={{ width: `${(timeLeft / (5 * 60)) * 100}%` }}
               />
             </div>
           )}
@@ -609,7 +609,7 @@ export default function App() {
                     <Clock className="w-[14px] h-[14px] md:w-[18px] md:h-[18px] text-slate-600" />
                     <span>Thời gian làm bài</span>
                   </div>
-                  <span className="font-semibold text-slate-800">15 phút</span>
+                  <span className="font-semibold text-slate-800">5 phút</span>
                 </div>
                 <div className="flex justify-between items-center py-1.5 md:py-2">
                   <div className="flex items-center gap-2 md:gap-3 text-slate-700">
@@ -871,7 +871,7 @@ export default function App() {
               <div className="border-t border-slate-200 pt-4">
                 <p className="text-sm text-slate-500 uppercase tracking-wider font-semibold mb-1">Thời gian hoàn thành</p>
                 <p className="text-2xl font-bold text-slate-700">
-                  {Math.floor(((15 * 60) - timeLeft) / 60)} phút {((15 * 60) - timeLeft) % 60} giây
+                  {Math.floor(((5 * 60) - timeLeft) / 60)} phút {((5 * 60) - timeLeft) % 60} giây
                 </p>
               </div>
             </div>
