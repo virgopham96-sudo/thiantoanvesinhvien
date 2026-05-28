@@ -109,7 +109,19 @@ export default function App() {
       selectedArrangement = px4ArrangementQuestions;
     }
 
-    const shuffledMC = shuffleArray(selectedMCQ).slice(0, 20).map(q => {
+    const adjustedMCQ = selectedMCQ.map(q => {
+      if (q.type === 'multiple-choice') {
+        const adjustedOptions = q.options.map(opt => {
+          let text = opt.text.trim();
+          text = text.replace(/[\.\s]+$/, '');
+          return { ...opt, text };
+        });
+        return { ...q, options: adjustedOptions };
+      }
+      return q;
+    });
+
+    const shuffledMC = shuffleArray(adjustedMCQ).slice(0, 20).map(q => {
       if (q.type === 'multiple-choice') {
         const hasFixedOptions = q.options.some(opt => {
           const t = opt.text.toLowerCase();
